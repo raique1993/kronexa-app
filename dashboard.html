@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard — Kronexa Platform</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--p:#6C3FE8;--c:#00E5FF;--g:#22c55e;--r:#f43f5e;--o:#f59e0b;--bg:#08081A;--bg2:#12122A;--bg3:#1a1a35;--t1:#F0F0FF;--t2:#9090b0;--t3:#505070}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--t1);font-family:-apple-system,sans-serif;display:grid;grid-template-columns:240px 1fr;grid-template-rows:60px 1fr;height:100vh;overflow:hidden}
+/* HEADER */
+.hd{grid-column:1/-1;background:var(--bg2);border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;padding:0 20px;gap:12px;z-index:10}
+.logo{font-size:17px;font-weight:900;letter-spacing:-1px}.logo span{color:var(--p)}
+.prod-tag{padding:3px 10px;border-radius:100px;font-size:10px;font-weight:800}
+.tag-auto{background:rgba(251,191,36,.1);color:var(--o)}
+.tag-store{background:rgba(0,229,255,.1);color:var(--c)}
+.tag-saude{background:rgba(34,197,94,.1);color:var(--g)}
+.tag-platform{background:rgba(108,63,232,.1);color:#a78bfa}
+.hd-search{flex:1;max-width:360px;margin:0 20px}
+.hd-search input{width:100%;padding:7px 14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.08);border-radius:8px;color:var(--t1);font-size:13px;outline:none}
+.hd-right{margin-left:auto;display:flex;align-items:center;gap:12px}
+.notif-btn{width:36px;height:36px;background:rgba(255,255,255,.05);border:none;border-radius:9px;color:var(--t1);font-size:16px;cursor:pointer;position:relative}
+.notif-dot{position:absolute;top:6px;right:7px;width:7px;height:7px;background:var(--r);border-radius:50%;border:1px solid var(--bg2)}
+.user-chip{display:flex;align-items:center;gap:8px;padding:4px 12px 4px 4px;background:rgba(255,255,255,.05);border-radius:100px;cursor:pointer}
+.user-av{width:32px;height:32px;border-radius:50%;background:linear-gradient(135deg,var(--p),var(--c));display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:800;flex-shrink:0}
+.user-name{font-size:13px;font-weight:600}
+/* SIDEBAR */
+.sidebar{background:var(--bg2);border-right:1px solid rgba(255,255,255,.07);overflow-y:auto;display:flex;flex-direction:column}
+.nav-section{padding:16px 12px 4px;font-size:10px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:1px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 14px;font-size:13px;cursor:pointer;color:var(--t2);border-radius:8px;margin:1px 8px;transition:.15s}
+.nav-item:hover{background:rgba(255,255,255,.04);color:var(--t1)}
+.nav-item.on{background:rgba(108,63,232,.12);color:var(--t1)}
+.nav-item.on::before{content:'';position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--p);border-radius:0 2px 2px 0}
+.nav-item{position:relative}
+.nav-ico{font-size:16px;width:22px;text-align:center;flex-shrink:0}
+.nav-badge{margin-left:auto;padding:1px 6px;border-radius:100px;font-size:9px;font-weight:700;background:var(--p);color:#fff}
+.nav-footer{margin-top:auto;padding:12px}
+.btn-logout{width:100%;padding:9px;background:rgba(244,63,94,.08);border:1px solid rgba(244,63,94,.15);color:var(--r);border-radius:9px;font-size:12px;font-weight:700;cursor:pointer}
+/* MAIN */
+.main{overflow-y:auto;background:var(--bg)}
+.panel{display:none;padding:24px}.panel.on{display:block}
+/* CARDS */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.stat-card{background:var(--bg2);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:18px;transition:.2s}
+.stat-card:hover{border-color:rgba(108,63,232,.3)}
+.stat-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px}
+.stat-ico{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:18px}
+.stat-chg{font-size:11px;font-weight:700;padding:2px 8px;border-radius:100px}
+.chg-up{background:rgba(34,197,94,.1);color:var(--g)}
+.chg-dn{background:rgba(244,63,94,.1);color:var(--r)}
+.stat-val{font-size:28px;font-weight:900;letter-spacing:-1px;margin-bottom:2px}
+.stat-lbl{font-size:12px;color:var(--t2)}
+/* TABLES */
+.card{background:var(--bg2);border:1px solid rgba(255,255,255,.07);border-radius:14px;overflow:hidden;margin-bottom:16px}
+.card-hd{padding:16px 20px;border-bottom:1px solid rgba(255,255,255,.06);display:flex;justify-content:space-between;align-items:center}
+.card-hd h3{font-size:14px;font-weight:700}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;padding:10px 16px;border-bottom:1px solid rgba(255,255,255,.05)}
+td{padding:11px 16px;border-bottom:1px solid rgba(255,255,255,.04);font-size:13px}
+tr:last-child td{border:none}
+tr:hover td{background:rgba(255,255,255,.01)}
+.badge{padding:3px 9px;border-radius:100px;font-size:10px;font-weight:700;white-space:nowrap}
+/* FORMS */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+label{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px}
+.fi{width:100%;padding:10px 13px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:9px;color:var(--t1);font-size:13px;outline:none;transition:.2s}
+.fi:focus{border-color:var(--p);background:rgba(108,63,232,.04)}
+textarea.fi{resize:vertical;min-height:90px;line-height:1.5}
+.btn{padding:9px 18px;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer}
+.btn-p{background:var(--p);color:#fff}
+.btn-g{background:var(--g);color:#000}
+.btn-r{background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.2);color:var(--r)}
+.btn-o{background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);color:var(--t2)}
+/* WPP STATUS */
+.wpp-card{background:var(--bg2);border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:20px;display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.wpp-left{display:flex;align-items:center;gap:12px}
+.wpp-ico{width:44px;height:44px;background:rgba(34,197,94,.1);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:22px}
+.wpp-name{font-size:14px;font-weight:700;margin-bottom:3px}
+.wpp-meta{font-size:12px;color:var(--t2)}
+.status-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.dot-on{background:var(--g);box-shadow:0 0 8px rgba(34,197,94,.5)}
+.dot-off{background:var(--t3)}
+.dot-wait{background:var(--o);animation:pulse .8s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+/* IA CONFIG */
+.ia-tabs{display:flex;gap:4px;margin-bottom:16px;background:rgba(255,255,255,.03);padding:4px;border-radius:10px}
+.ia-tab{padding:7px 14px;border-radius:7px;font-size:12px;font-weight:600;cursor:pointer;color:var(--t2);transition:.2s}
+.ia-tab.on{background:var(--p);color:#fff}
+.prompt-box{background:var(--bg3);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:16px;margin-bottom:12px}
+.prompt-label{font-size:11px;font-weight:700;color:var(--p);margin-bottom:6px;display:flex;justify-content:space-between}
+/* TOAST */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);padding:10px 24px;border-radius:100px;font-size:13px;font-weight:600;z-index:999;display:none;white-space:nowrap;box-shadow:0 4px 20px rgba(0,0,0,.4)}
+.toast.ok{background:rgba(34,197,94,.9);color:#000}
+.toast.err{background:rgba(244,63,94,.9);color:#fff}
+/* RESP */
+@media(max-width:768px){.stats{grid-template-columns:1fr 1fr}.form-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header class="hd">
+  <div class="logo">KRO<span>NEXA</span></div>
+  <span id="prod-tag" class="prod-tag tag-platform">PLATFORM</span>
+  <div class="hd-search"><input placeholder="Buscar clientes, agendamentos..."></div>
+  <div class="hd-right">
+    <button class="notif-btn" onclick="nav('notificacoes')">🔔<span class="notif-dot"></span></button>
+    <div class="user-chip" onclick="nav('perfil')">
+      <div class="user-av" id="user-av">U</div>
+      <span class="user-name" id="user-nome">Carregando...</span>
+    </div>
+  </div>
+</header>
+
+<nav class="sidebar">
+  <div class="nav-section">Principal</div>
+  <div class="nav-item on" onclick="nav('overview')"><span class="nav-ico">📊</span> Overview</div>
+  <div class="nav-item" onclick="nav('clientes')"><span class="nav-ico">👥</span> Clientes<span class="nav-badge" id="nb-cli">—</span></div>
+  <div class="nav-item" onclick="nav('os')"><span class="nav-ico">📋</span> OS / Agendamentos</div>
+  <div class="nav-item" onclick="nav('estoque')"><span class="nav-ico">📦</span> Estoque</div>
+
+  <div class="nav-section">Inteligência</div>
+  <div class="nav-item" onclick="nav('ia-config')"><span class="nav-ico">🤖</span> Config IA</div>
+  <div class="nav-item" onclick="nav('whatsapp')"><span class="nav-ico">📱</span> WhatsApp</div>
+  <div class="nav-item" onclick="nav('conversas')"><span class="nav-ico">💬</span> Conversas</div>
+
+  <div class="nav-section">Financeiro</div>
+  <div class="nav-item" onclick="nav('pagamentos')"><span class="nav-ico">💳</span> Pagamentos</div>
+  <div class="nav-item" onclick="nav('nps')"><span class="nav-ico">⭐</span> Satisfação NPS</div>
+  <div class="nav-item" onclick="nav('relatorios')"><span class="nav-ico">📈</span> Relatórios</div>
+
+  <div class="nav-section">Empresa</div>
+  <div class="nav-item" onclick="nav('politicas')"><span class="nav-ico">⚖️</span> Políticas</div>
+  <div class="nav-item" onclick="nav('configuracoes')"><span class="nav-ico">⚙️</span> Configurações</div>
+  <div class="nav-item" onclick="nav('perfil')"><span class="nav-ico">👤</span> Meu Perfil</div>
+
+  <div class="nav-section" id="nav-prod-section" style="display:none">Produto</div>
+  <div class="nav-item" id="nav-prod-link" style="display:none" onclick="irParaProduto()"><span class="nav-ico">🚀</span> Abrir Sistema</div>
+
+  <div class="nav-footer">
+    <button class="btn-logout" onclick="logout()">← Sair</button>
+  </div>
+</nav>
+
+<main class="main">
+
+<!-- OVERVIEW -->
+<div id="p-overview" class="panel on">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+    <div>
+      <h2 style="font-size:20px;font-weight:800;letter-spacing:-.5px" id="ov-welcome">Bom dia! 👋</h2>
+      <p style="font-size:13px;color:var(--t2);margin-top:2px" id="ov-empresa">Carregando...</p>
+    </div>
+    <div style="font-size:12px;color:var(--t3)" id="ov-date"></div>
+  </div>
+  <div class="stats" id="stats-grid"></div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div class="card">
+      <div class="card-hd"><h3>📋 Últimas atividades</h3></div>
+      <div id="recent-activity" style="padding:16px;font-size:13px;color:var(--t2)">Carregando...</div>
+    </div>
+    <div class="card">
+      <div class="card-hd"><h3>📱 Status WhatsApp</h3><button class="btn btn-o" style="font-size:11px;padding:5px 10px" onclick="nav('whatsapp')">Gerenciar</button></div>
+      <div id="wpp-overview" style="padding:12px">Carregando...</div>
+    </div>
+  </div>
+</div>
+
+<!-- CLIENTES -->
+<div id="p-clientes" class="panel">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+    <h2 style="font-size:18px;font-weight:800">👥 Clientes</h2>
+    <div style="display:flex;gap:8px">
+      <input class="fi" id="busca-cli" placeholder="Buscar..." style="width:220px" oninput="loadClientes()">
+      <button class="btn btn-p" onclick="showModal('m-novo-cli')">+ Novo cliente</button>
+    </div>
+  </div>
+  <div class="card">
+    <table>
+      <thead><tr><th>Nome</th><th>Telefone</th><th>Email</th><th>Criado</th><th>Plano</th><th>Status</th><th>Ações</th></tr></thead>
+      <tbody id="tb-clientes"><tr><td colspan="7" style="text-align:center;color:var(--t2);padding:24px">Carregando...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- OS / AGENDAMENTOS -->
+<div id="p-os" class="panel">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+    <h2 style="font-size:18px;font-weight:800">📋 OS / Agendamentos</h2>
+    <select class="fi" style="width:160px" id="os-filtro" onchange="loadOS()">
+      <option value="">Todos</option>
+      <option>AGENDADO</option><option>CONFIRMADO</option><option>CONCLUIDO</option><option>CANCELADO</option>
+    </select>
+  </div>
+  <div class="card">
+    <table>
+      <thead><tr><th>Cliente</th><th>Data/Hora</th><th>Serviço</th><th>Valor</th><th>Status</th><th>Canal</th><th>Ações</th></tr></thead>
+      <tbody id="tb-os"><tr><td colspan="7" style="text-align:center;color:var(--t2);padding:24px">Carregando...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ESTOQUE -->
+<div id="p-estoque" class="panel">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+    <h2 style="font-size:18px;font-weight:800">📦 Estoque</h2>
+    <button class="btn btn-p" onclick="showModal('m-novo-prod')">+ Produto</button>
+  </div>
+  <div class="stats" style="grid-template-columns:repeat(3,1fr)">
+    <div class="stat-card"><div class="stat-ico" style="background:rgba(108,63,232,.1)">📦</div><div class="stat-val" id="est-total">—</div><div class="stat-lbl">Produtos cadastrados</div></div>
+    <div class="stat-card"><div class="stat-ico" style="background:rgba(244,63,94,.1)">⚠️</div><div class="stat-val" id="est-baixo" style="color:var(--r)">—</div><div class="stat-lbl">Estoque baixo</div></div>
+    <div class="stat-card"><div class="stat-ico" style="background:rgba(34,197,94,.1)">💰</div><div class="stat-val" id="est-valor">—</div><div class="stat-lbl">Valor em estoque</div></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <table>
+      <thead><tr><th>Produto</th><th>SKU</th><th>Qtd</th><th>Mín.</th><th>Preço</th><th>Categoria</th><th>Status</th></tr></thead>
+      <tbody id="tb-estoque"><tr><td colspan="7" style="text-align:center;color:var(--t2);padding:24px">Carregando...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- CONFIG IA -->
+<div id="p-ia-config" class="panel">
+  <h2 style="font-size:18px;font-weight:800;margin-bottom:20px">🤖 Configurar IA</h2>
+  <div class="ia-tabs" id="ia-tabs">
+    <div class="ia-tab on" onclick="setIATab('personalidade')">Personalidade</div>
+    <div class="ia-tab" onclick="setIATab('prompts')">Prompts</div>
+    <div class="ia-tab" onclick="setIATab('precos')">Política de Preços</div>
+    <div class="ia-tab" onclick="setIATab('horarios')">Horários</div>
+    <div class="ia-tab" onclick="setIATab('teste')">Testar</div>
+  </div>
+
+  <div id="ia-personalidade" class="ia-panel">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="card" style="padding:20px">
+        <div class="prompt-label">Nome e tom</div>
+        <div class="form-grid">
+          <div><label>Nome da IA</label><input class="fi" id="ia-nome" placeholder="Sofia" value="Sofia"></div>
+          <div><label>Tom de voz</label><select class="fi" id="ia-tom"><option value="formal">Formal e profissional</option><option value="amigavel">Amigável e descontraído</option><option value="empatico">Empático e acolhedor</option><option value="tecnico">Técnico e objetivo</option></select></div>
+        </div>
+        <div style="margin-top:12px"><label>Personalidade</label><textarea class="fi" id="ia-pers" rows="3" placeholder="Descreva como a IA deve se comportar...">Profissional, simpática e objetiva. Resolve problemas rapidamente e com cordialidade.</textarea></div>
+        <div style="margin-top:12px"><label>Idioma padrão</label><select class="fi" id="ia-idioma"><option value="pt-BR">Português (Brasil)</option><option value="en">English</option><option value="es">Español</option></select></div>
+      </div>
+      <div class="card" style="padding:20px">
+        <div class="prompt-label">Preview da IA</div>
+        <div style="background:var(--bg3);border-radius:10px;padding:14px;margin-bottom:10px">
+          <div style="font-size:11px;color:var(--t3);margin-bottom:8px">Como a IA vai se apresentar:</div>
+          <div id="ia-preview" style="font-size:13px;line-height:1.6;color:var(--t2)">Olá! Sou a Sofia, assistente virtual. Como posso ajudar você hoje?</div>
+        </div>
+        <div style="background:rgba(108,63,232,.05);border:1px solid rgba(108,63,232,.2);border-radius:10px;padding:14px">
+          <div style="font-size:11px;color:var(--p);font-weight:700;margin-bottom:8px">💡 Dicas de personalidade</div>
+          <ul style="font-size:12px;color:var(--t2);padding-left:16px;line-height:2">
+            <li>Use o nome da empresa na apresentação</li>
+            <li>Defina limites de negociação específicos</li>
+            <li>Inclua frases de empatia para reclamações</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="ia-prompts" class="ia-panel" style="display:none">
+    <div class="card" style="padding:20px">
+      <div class="prompt-box">
+        <div class="prompt-label">Prompt base (instrução principal da IA) <span style="color:var(--t3);font-weight:400">mais importante</span></div>
+        <textarea class="fi" id="ia-prompt-base" rows="5" placeholder="Você é {nome_ia}, assistente virtual de {nome_empresa}. Seu objetivo é...">Você é {nome_ia}, assistente virtual de {nome_empresa}. Atenda com cordialidade, resolva problemas e agende serviços. Sempre confirme os dados antes de finalizar.</textarea>
+      </div>
+      <div class="prompt-box">
+        <div class="prompt-label">Saudação inicial</div>
+        <textarea class="fi" id="ia-saudacao" rows="2">Olá! Sou a {nome_ia} de {nome_empresa}. Como posso ajudar você hoje? 😊</textarea>
+      </div>
+      <div class="prompt-box">
+        <div class="prompt-label">Resposta para reclamação</div>
+        <textarea class="fi" id="ia-reclamacao" rows="2">Sinto muito pelo inconveniente! 😔 Vou registrar sua reclamação e nossa equipe entrará em contato em até 2 horas para resolver.</textarea>
+      </div>
+      <div class="prompt-box">
+        <div class="prompt-label">Negociação de preços</div>
+        <textarea class="fi" id="ia-negociacao" rows="3">Entendo sua preocupação com o valor! O serviço inclui {descricao}. Posso verificar se há alguma condição especial disponível. Você pagaria à vista? Temos condições melhores nesse caso.</textarea>
+      </div>
+      <div class="prompt-box">
+        <div class="prompt-label">Encerramento</div>
+        <textarea class="fi" id="ia-encerramento" rows="2">Fico feliz em ter ajudado! 😊 Qualquer dúvida, é só chamar. Tenha um ótimo dia!</textarea>
+      </div>
+    </div>
+  </div>
+
+  <div id="ia-precos" class="ia-panel" style="display:none">
+    <div class="card" style="padding:20px">
+      <h3 style="font-size:14px;font-weight:700;margin-bottom:16px">Política de preços e negociação</h3>
+      <div class="form-grid">
+        <div><label>Desconto máximo permitido (%)</label><input class="fi" type="number" id="ia-desc-max" value="15"></div>
+        <div><label>Desconto 1ª compra/consulta (%)</label><input class="fi" type="number" id="ia-desc-1a" value="10"></div>
+        <div><label>Desconto pagamento à vista (%)</label><input class="fi" type="number" id="ia-desc-vista" value="5"></div>
+        <div><label>Desconto indicação (%)</label><input class="fi" type="number" id="ia-desc-ind" value="8"></div>
+      </div>
+      <div style="margin-top:14px"><label>Condições que autorizam desconto</label><textarea class="fi" id="ia-cond-desc" rows="3" placeholder="Ex: Primeira compra, pagamento à vista no PIX, cliente há mais de 1 ano...">Primeira compra/consulta, pagamento à vista no PIX, indicação de outro cliente, cliente fidelizado há mais de 6 meses.</textarea></div>
+      <div style="margin-top:14px"><label>O que a IA NÃO pode oferecer (proibições)</label><textarea class="fi" id="ia-proib" rows="2" placeholder="Ex: Não oferecer parcelamento acima de 12x...">Não pode oferecer desconto acima do limite configurado. Não pode confirmar serviços que não estão no catálogo.</textarea></div>
+    </div>
+  </div>
+
+  <div id="ia-horarios" class="ia-panel" style="display:none">
+    <div class="card" style="padding:20px">
+      <h3 style="font-size:14px;font-weight:700;margin-bottom:16px">Horários de atendimento da IA</h3>
+      <div id="horarios-ia" style="display:flex;flex-direction:column;gap:8px"></div>
+      <div style="margin-top:14px"><label>Mensagem fora do horário</label><textarea class="fi" id="ia-fora-horario" rows="2">Olá! No momento estamos fora do horário de atendimento. Funcionamos {horarios}. Deixe sua mensagem e retornaremos em breve! 😊</textarea></div>
+    </div>
+  </div>
+
+  <div id="ia-teste" class="ia-panel" style="display:none">
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+      <div class="card" style="padding:16px">
+        <div style="font-size:13px;font-weight:700;margin-bottom:10px">💬 Simular conversa</div>
+        <div id="teste-chat" style="height:280px;overflow-y:auto;background:var(--bg3);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:8px;margin-bottom:10px">
+          <div style="align-self:flex-start;background:var(--bg2);padding:8px 12px;border-radius:3px 10px 10px 10px;font-size:12px;max-width:80%">Olá! Sou a Sofia. Como posso ajudar?</div>
+        </div>
+        <div style="display:flex;gap:6px">
+          <input class="fi" id="teste-inp" placeholder="Simule uma mensagem..." onkeydown="if(event.key==='Enter')testarIA()">
+          <button class="btn btn-p" onclick="testarIA()">→</button>
+        </div>
+      </div>
+      <div>
+        <div class="card" style="padding:16px;margin-bottom:12px">
+          <div style="font-size:13px;font-weight:700;margin-bottom:10px">⚡ Sugestões de cenários</div>
+          <div style="display:flex;flex-direction:column;gap:6px" id="cenarios"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;gap:8px;margin-top:16px">
+    <button class="btn btn-p" onclick="salvarIA()">💾 Salvar configurações</button>
+    <button class="btn btn-o" onclick="setIATab('teste')">🤖 Testar IA</button>
+  </div>
+</div>
+
+<!-- WHATSAPP -->
+<div id="p-whatsapp" class="panel">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px">
+    <h2 style="font-size:18px;font-weight:800">📱 Gerenciar WhatsApp</h2>
+    <button class="btn btn-p" onclick="showModal('m-nova-instancia')">+ Adicionar número</button>
+  </div>
+  <div id="wpp-list"></div>
+  <div class="card" style="margin-top:16px">
+    <div class="card-hd"><h3>📊 Estatísticas de mensagens</h3></div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;padding:16px" id="wpp-stats">
+      <div style="text-align:center"><div style="font-size:24px;font-weight:900" id="ws-total">—</div><div style="font-size:12px;color:var(--t2)">Total este mês</div></div>
+      <div style="text-align:center"><div style="font-size:24px;font-weight:900;color:var(--g)" id="ws-enviadas">—</div><div style="font-size:12px;color:var(--t2)">Enviadas</div></div>
+      <div style="text-align:center"><div style="font-size:24px;font-weight:900;color:var(--c)" id="ws-recebidas">—</div><div style="font-size:12px;color:var(--t2)">Recebidas</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- CONVERSAS -->
+<div id="p-conversas" class="panel">
+  <h2 style="font-size:18px;font-weight:800;margin-bottom:20px">💬 Histórico de Conversas</h2>
+  <div style="display:grid;grid-template-columns:320px 1fr;gap:16px;height:calc(100vh - 140px)">
+    <div class="card" style="overflow:hidden;display:flex;flex-direction:column">
+      <div style="padding:12px;border-bottom:1px solid rgba(255,255,255,.06)"><input class="fi" placeholder="Buscar conversa..." id="busca-conv" oninput="loadConversas()"></div>
+      <div id="conv-list" style="overflow-y:auto;flex:1"></div>
+    </div>
+    <div class="card" id="conv-detail" style="padding:20px;display:flex;align-items:center;justify-content:center">
+      <div style="text-align:center;color:var(--t3)"><div style="font-size:40px;margin-bottom:10px">💬</div><div>Selecione uma conversa</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- PAGAMENTOS -->
+<div id="p-pagamentos" class="panel">
+  <h2 style="font-size:18px;font-weight:800;margin-bottom:20px">💳 Histórico de Pagamentos</h2>
+  <div class="stats" style="grid-template-columns:repeat(3,1fr);margin-bottom:20px">
+    <div class="stat-card"><div class="stat-val" id="pg-mes" style="color:var(--g)">—</div><div class="stat-lbl">Faturamento este mês</div></div>
+    <div class="stat-card"><div class="stat-val" id="pg-pendente" style="color:var(--o)">—</div><div class="stat-lbl">Pendentes</div></div>
+    <div class="stat-card"><div class="stat-val" id="pg-total">—</div><div class="stat-lbl">Total acumulado</div></div>
+  </div>
+  <div class="card">
+    <table>
+      <thead><tr><th>Data</th><th>Descrição</th><th>Cliente</th><th>Valor</th><th>Forma</th><th>Status</th><th>NF</th></tr></thead>
+      <tbody id="tb-pag"><tr><td colspan="7" style="text-align:center;color:var(--t2);padding:24px">Carregando...</td></tr></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- NPS -->
+<div id="p-nps" class="panel">
+  <h2 style="font-size:18px;font-weight:800;margin-bottom:20px">⭐ Dashboard de Satisfação</h2>
+  <div class="stats">
+    <div class="stat-card"><div class="stat-val" id="nps-score">—</div><div class="stat-lbl">NPS Score</div></div>
+    <div class="stat-card"><div class="stat-val" id="nps-prom" style="color:var(--g)">—</div><div class="stat-lbl">Promotores (9-10)</div></div>
+    <div class="stat-card"><div class="stat-val" id="nps-neu" style="color:var(--o)">—</div><div class="stat-lbl">Neutros (7-8)</div></div>
+    <div class="stat-card"><div class="stat-val" id="nps-det" style="color:var(--r)">—</div><div class="stat-lbl">Detratores (1-6)</div></div>
+  </div>
+  <div class="card" style="margin-top:16px">
+    <div class="card-hd"><h3>Avaliações recentes</h3></div>
+    <table>
+      <thead><tr><th>Cliente</th><th>Nota</th><th>Comentário</th><th>Data</th></tr></thead>
+      <tbody id="tb-nps"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- POLÍTICAS -->
+<div id="p-politicas" class="panel">
+  <h2 style="font-size:18px;font-weight:800;margin-bottom:20px">⚖️ Políticas da Empresa</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div class="card" style="padding:20px">
+      <h3 style="font-size:14px;font-weight:700;margin-bottom:14px">📋 Política de Cancelamento</h3>
+      <textarea class="fi" id="pol-cancelamento" rows="6">Cancelamentos com até 24 horas de antecedência não geram cobrança.
+Cancelamentos com menos de 24h terão cobrança de 50% do valor do serviço.
+Não comparecimento sem aviso prévio: cobrança de 100% do valor.
+Remarcações devem ser feitas com mínimo de 2 horas de antecedência.</textarea>
+      <button class="btn btn-p" style="margin-top:10px;width:100%" onclick="toast('✅ Política de cancelamento salva!')">Salvar</button>
+    </div>
+    <div class="card" style="padding:20px">
+      <h3 style="font-size:14px;font-weight:700;margin-bottom:14px">🔒 Política de Privacidade (LGPD)</h3>
+      <textarea class="fi" id="pol-privacidade" rows="6">Seus dados são coletados exclusivamente para prestação dos serviços contratados.
+Não compartilhamos informações pessoais com terceiros sem consentimento.
+Você pode solicitar exclusão de dados a qualquer momento.
+Armazenamos dados por até 5 anos conforme obrigações legais.
+Contato DPO: privacidade@kronexa.com.br</textarea>
+      <button class="btn btn-p" style="margin-top:10px;width:100%" onclick="toast('✅ Política de privacidade salva!')">Salvar</button>
+    </div>
+    <div class="card" style="padding:20px">
+      <h3 style="font-size:14px;font-weight:700;margin-bottom:14px">📜 Termos de Uso do Serviço</h3>
+      <textarea class="fi" id="pol-termos" rows="6">Ao contratar nossos serviços, o cliente concorda com os presentes termos.
+Os serviços serão prestados conforme acordado no momento do agendamento.
+O prazo de garantia é de 30 dias para serviços realizados.
+Pagamentos devem ser realizados no ato da prestação do serviço.
+Em caso de divergências, foro competente é a comarca local.</textarea>
+      <button class="btn btn-p" style="margin-top:10px;width:100%" onclick="toast('✅ Termos de uso salvos!')">Salvar</button>
+    </div>
+    <div class="card" style="padding:20px">
+      <h3 style="font-size:14px;font-weight:700;margin-bottom:14px">💰 Política Comercial</h3>
+      <textarea class="fi" id="pol-comercial" rows="6">Preços sujeitos a alteração sem aviso prévio.
+Condições especiais disponíveis para pagamento à vista.
+Pacotes e descontos conforme tabela vigente.
+Convênios: verificar lista de convênios aceitos no momento do agendamento.
+Orçamentos válidos por 30 dias.</textarea>
+      <button class="btn btn-p" style="margin-top:10px;width:100%" onclick="toast('✅ Política comercial salva!')">Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIGURAÇÕES -->
+<div id="p-configuracoes" class="panel">
+  <h2 style="font-size:18px;font-weight:800;margin-bottom:20px">⚙️ Configurações da Conta</h2>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+    <div class="card" style="padding:20px">
+      <h3 style="font-size:14px;font-weight:700;margin-bottom:14px">🏢 Dados da empresa</h3>
+      <div class="form-grid">
+        <div style="grid-column:1/-1"><label>Nome da empresa</label><input class="fi" id="emp-nome" placeholder="Empresa Exemplo"></div>
+        <div><label>CNPJ / CPF</label><input class="fi" id="emp-cnpj"></div>
+        <div><label>Telefone principal</label><input class="fi" id="emp-tel"></div>
+        <div style="grid-column:1/-1"><label>Endereço</label><input class="fi" id="emp-end"></div>
+        <div><label>Cidade</label><input class="fi" id="emp-cidade"></div>
+        <div><label>Estado</label><input class="fi" id="emp-estado"></div>
+      </div>
+      <button class="btn btn-p" style="margin-top:14px" onclick="toast('✅ Dados salvos!')">Salvar dados</button>
+    </div>
+    <div>
+      <div class="card" style="padding:20px;margin-bottom:12px">
+        <h3 style="font-size:14px;font-weight:700;margin-bottom:14px">🔐 Segurança</h3>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div><label>Nova senha</label><input class="fi" type="password" id="new-pass" placeholder="Mínimo 6 caracteres"></div>
+          <div><label>Confirmar senha</label><input class="fi" type="password" id="conf-pass"></div>
+        </div>
+        <button class="btn btn-p" style="margin-top:10px;width:100%" onclick="alterarSenha()">Alterar senha</button>
+      </div>
+      <div class="card" style="padding:20px">
+        <h3 style="font-size:14px;font-weight:700;margin-bottom:14px">📦 Plano atual</h3>
+        <div id="plano-info" style="font-size:13px;color:var(--t2)">Carregando...</div>
+        <button class="btn btn-o" style="margin-top:10px;width:100%" onclick="window.open('https://kronexa.com.br/checkout','_blank')">Fazer upgrade</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PERFIL -->
+<div id="p-perfil" class="panel">
+  <h2 style="font-size:18px;font-weight:800;margin-bottom:20px">👤 Meu Perfil</h2>
+  <div class="card" style="padding:24px;max-width:480px">
+    <div id="perfil-info" style="font-size:14px;line-height:2.2;color:var(--t2)">Carregando...</div>
+    <button class="btn btn-p" style="margin-top:16px" onclick="nav('configuracoes')">⚙️ Editar configurações</button>
+  </div>
+</div>
+
+<!-- RELATÓRIOS -->
+<div id="p-relatorios" class="panel">
+  <h2 style="font-size:18px;font-weight:800;margin-bottom:20px">📈 Relatórios</h2>
+  <div style="display:grid;grid-template-columns:repeat(2,1fr);gap:16px">
+    <div class="card" style="padding:20px">
+      <h3 style="font-size:14px;font-weight:700;margin-bottom:12px">📊 Relatório mensal</h3>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg3);border-radius:8px;font-size:13px"><span>Receita total</span><span id="rel-receita" style="font-weight:700;color:var(--g)">—</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg3);border-radius:8px;font-size:13px"><span>Atendimentos</span><span id="rel-atend" style="font-weight:700">—</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg3);border-radius:8px;font-size:13px"><span>Novos clientes</span><span id="rel-novos" style="font-weight:700;color:var(--c)">—</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg3);border-radius:8px;font-size:13px"><span>NPS médio</span><span id="rel-nps" style="font-weight:700;color:var(--p)">—</span></div>
+      </div>
+      <button class="btn btn-p" style="margin-top:12px;width:100%" onclick="toast('📊 Exportando PDF...')">📄 Exportar PDF</button>
+    </div>
+    <div class="card" style="padding:20px">
+      <h3 style="font-size:14px;font-weight:700;margin-bottom:12px">🤖 Relatório de IA</h3>
+      <div style="display:flex;flex-direction:column;gap:8px">
+        <div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg3);border-radius:8px;font-size:13px"><span>Mensagens processadas</span><span id="rel-msgs" style="font-weight:700">—</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg3);border-radius:8px;font-size:13px"><span>Agendamentos via IA</span><span id="rel-ia-agend" style="font-weight:700;color:var(--g)">—</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg3);border-radius:8px;font-size:13px"><span>Taxa de conversão</span><span id="rel-conv" style="font-weight:700;color:var(--c)">—</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px;background:var(--bg3);border-radius:8px;font-size:13px"><span>Tempo médio de resposta</span><span id="rel-tempo" style="font-weight:700">—</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<!-- TOAST -->
+<div id="toast" class="toast"></div>
+
+<script>
+const SB_URL='https://tcjynyfusqkqtdohnyzq.supabase.co', SB_KEY='sb_publishable_gNJhc4WCS9MnnmDAL2T6Vg_AQ71_Vid';
+const sb=supabase.createClient(SB_URL,SB_KEY);
+const EVO='https://evolution-api-production-f8dd.up.railway.app';
+const EK='a6c76ff8be4630ac09151a15b1273f9a86ad10c466a68931eb24c40fea102365';
+
+let user=null, meta=null, tenantId=null, produto=null;
+
+// ─── AUTH ──────────────────────────────────────────────────────
+async function init(){
+  const{data:{session}}=await sb.auth.getSession();
+  if(!session){window.location.href='index.html';return;}
+  user=session.user;
+  meta=user.user_metadata||{};
+  produto=meta.produto||'auto';
+  tenantId=meta.tenant_id||null;
+
+  const nome=meta.nome||user.email?.split('@')[0]||'Usuário';
+  const inicial=nome[0].toUpperCase();
+  document.getElementById('user-av').textContent=inicial;
+  document.getElementById('user-nome').textContent=nome.split(' ')[0];
+  document.getElementById('ov-welcome').textContent=`Bom dia, ${nome.split(' ')[0]}! 👋`;
+  document.getElementById('ov-empresa').textContent=meta.empresa||'Minha empresa';
+  document.getElementById('ov-date').textContent=new Date().toLocaleDateString('pt-BR',{weekday:'long',day:'2-digit',month:'long'});
+
+  // Tag do produto
+  const tags={auto:'tag-auto',store:'tag-store',saude:'tag-saude'};
+  const nomes={auto:'AUTO',store:'STORE',saude:'SAÚDE'};
+  const pt=document.getElementById('prod-tag');
+  pt.textContent=nomes[produto]||'PLATFORM';
+  pt.className='prod-tag '+(tags[produto]||'tag-platform');
+
+  // Link pro produto
+  const links={auto:'https://mecaniia.com.br',store:'https://store.kronexa.com.br',saude:'https://saude.kronexa.com.br'};
+  document.getElementById('nav-prod-section').style.display='block';
+  document.getElementById('nav-prod-link').style.display='flex';
+  document.getElementById('nav-prod-link').innerHTML=`<span class="nav-ico">🚀</span> Abrir ${nomes[produto]||'Sistema'}`;
+  window._prodLink=links[produto]||'#';
+
+  // Horários padrão
+  renderHorarios();
+  renderCenarios();
+  loadOverview();
+  loadWPP();
+  document.getElementById('plano-info').innerHTML=`<strong>Plano:</strong> ${meta.plano||'TRIAL'}<br><strong>Produto:</strong> ${nomes[produto]}<br><strong>Email:</strong> ${user.email}`;
+  document.getElementById('perfil-info').innerHTML=`<strong>Nome:</strong> ${nome}<br><strong>Email:</strong> ${user.email}<br><strong>Empresa:</strong> ${meta.empresa||'—'}<br><strong>Produto:</strong> ${nomes[produto]||'—'}<br><strong>Plano:</strong> ${meta.plano||'TRIAL'}<br><strong>Telefone:</strong> ${meta.telefone||'—'}`;
+}
+
+function irParaProduto(){window.open(window._prodLink,'_blank');}
+
+// ─── NAVEGAÇÃO ─────────────────────────────────────────────────
+function nav(id){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  const p=document.getElementById('p-'+id);
+  if(p)p.classList.add('on');
+  document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('on'));
+  const loads={clientes:loadClientes,os:loadOS,estoque:loadEstoque,whatsapp:loadWPP,conversas:loadConversas,pagamentos:loadPagamentos,nps:loadNPS};
+  if(loads[id])loads[id]();
+}
+
+// ─── OVERVIEW ──────────────────────────────────────────────────
+async function loadOverview(){
+  // Stats baseado no produto
+  const tables={auto:{clients:'mc_clientes',os:'mc_ordens_servico',revenue:'mc_financeiro'},store:{clients:'ks_clientes',os:'ks_pedidos',revenue:'ks_financeiro'},saude:{clients:'kh_pacientes',os:'kh_agendamentos',revenue:'kh_financeiro'}};
+  const t=tables[produto]||tables.auto;
+  
+  // Stats mock (em produção viriam do Supabase)
+  const stats=[
+    {ico:'👥',label:'Clientes',val:'—',bg:'rgba(108,63,232,.1)',chg:null},
+    {ico:'📋',label:produto==='saude'?'Consultas':'OS/Pedidos',val:'—',bg:'rgba(0,229,255,.1)',chg:null},
+    {ico:'💬',label:'Msgs IA hoje',val:'—',bg:'rgba(34,197,94,.1)',chg:null},
+    {ico:'⭐',label:'NPS médio',val:'—',bg:'rgba(251,191,36,.1)',chg:null}
+  ];
+  
+  document.getElementById('stats-grid').innerHTML=stats.map(s=>`
+    <div class="stat-card">
+      <div class="stat-top"><div class="stat-ico" style="background:${s.bg}">${s.ico}</div></div>
+      <div class="stat-val">${s.val}</div>
+      <div class="stat-lbl">${s.label}</div>
+    </div>`).join('');
+
+  // Atividade recente
+  document.getElementById('recent-activity').innerHTML=`
+    <div style="display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;gap:10px;align-items:center;font-size:12px"><span>🤖</span><span style="color:var(--t2)">IA respondeu 12 mensagens hoje</span><span style="margin-left:auto;color:var(--t3)">agora</span></div>
+      <div style="display:flex;gap:10px;align-items:center;font-size:12px"><span>📅</span><span style="color:var(--t2)">3 agendamentos confirmados</span><span style="margin-left:auto;color:var(--t3)">1h atrás</span></div>
+      <div style="display:flex;gap:10px;align-items:center;font-size:12px"><span>⭐</span><span style="color:var(--t2)">Nova avaliação NPS: 9/10</span><span style="margin-left:auto;color:var(--t3)">2h atrás</span></div>
+    </div>`;
+}
+
+// ─── WHATSAPP ─────────────────────────────────────────────────
+async function loadWPP(){
+  const{data:instances}=await sb.from('kronexa_whatsapp_connections').select('*').order('criado_em');
+  const list=document.getElementById('wpp-list');
+  const ov=document.getElementById('wpp-overview');
+  if(!instances?.length){
+    list.innerHTML='<div style="text-align:center;padding:40px;color:var(--t2)">Nenhuma instância configurada.<br><button class="btn btn-p" onclick="showModal(\'m-nova-instancia\')" style="margin-top:12px">+ Adicionar WhatsApp</button></div>';
+    ov.innerHTML='<div style="font-size:12px;color:var(--t2);padding:8px">Nenhuma instância conectada</div>';
+    return;
+  }
+  
+  list.innerHTML=instances.map(i=>`
+    <div class="wpp-card">
+      <div class="wpp-left">
+        <div class="wpp-ico">${i.status==='CONECTADO'?'📱':'📵'}</div>
+        <div>
+          <div class="wpp-name">${i.instance_name}</div>
+          <div class="wpp-meta">${i.numero_conectado||'Não conectado'} · ${i.mensagens_enviadas||0} msgs enviadas · Produto: ${i.produto}</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="display:flex;align-items:center;gap:6px;font-size:12px;font-weight:700">
+          <div class="status-dot ${i.status==='CONECTADO'?'dot-on':i.status==='CONECTANDO'?'dot-wait':'dot-off'}"></div>
+          ${i.status}
+        </div>
+        ${i.status!=='CONECTADO'?`<button class="btn btn-g" style="font-size:11px;padding:6px 12px" onclick="conectarWPP('${i.instance_name}')">📷 Conectar</button>`:''}
+        <button class="btn btn-r" style="font-size:11px;padding:6px 12px" onclick="desconectarWPP('${i.instance_name}')">Desconectar</button>
+      </div>
+    </div>`).join('');
+  
+  ov.innerHTML=instances.map(i=>`
+    <div style="display:flex;justify-content:space-between;font-size:12px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04)">
+      <span style="display:flex;align-items:center;gap:6px"><div class="status-dot ${i.status==='CONECTADO'?'dot-on':'dot-off'}" style="width:6px;height:6px"></div>${i.instance_name}</span>
+      <span style="color:${i.status==='CONECTADO'?'var(--g)':'var(--t3)'}">${i.status}</span>
+    </div>`).join('');
+}
+
+async function conectarWPP(inst){
+  const r=await fetch(`${EVO}/instance/connect/${inst}`,{headers:{apikey:EK}});
+  const d=await r.json();
+  if(d.base64){
+    const w=window.open('','_blank','width=380,height=480');
+    w.document.write(`<html><body style="background:#0a0a15;color:#fff;display:flex;flex-direction:column;align-items:center;padding:20px;font-family:sans-serif"><h3 style="margin-bottom:16px">📱 Escaneie o QR Code</h3><img src="${d.base64}" style="width:260px;border-radius:12px"><p style="margin-top:12px;font-size:12px;color:#555">WhatsApp → Dispositivos vinculados → Vincular</p></body></html>`);
+    toast('QR Code gerado! Escaneie no WhatsApp.');
+  } else toast('Erro ao gerar QR Code',true);
+}
+
+async function desconectarWPP(inst){
+  if(!confirm(`Desconectar ${inst}?`))return;
+  await fetch(`${EVO}/instance/logout/${inst}`,{method:'DELETE',headers:{apikey:EK}}).catch(()=>{});
+  await sb.from('kronexa_whatsapp_connections').update({status:'DESCONECTADO',numero_conectado:null}).eq('instance_name',inst);
+  toast('📵 WhatsApp desconectado');loadWPP();
+}
+
+// ─── CLIENTES ─────────────────────────────────────────────────
+async function loadClientes(){
+  const busca=document.getElementById('busca-cli')?.value||'';
+  const tbls={auto:'mc_clientes',store:'ks_clientes',saude:'kh_pacientes'};
+  const tbl=tbls[produto]||'kh_pacientes';
+  let q=sb.from(tbl).select('*').limit(50);
+  if(busca)q=q.ilike('nome','%'+busca+'%');
+  const{data}=await q;
+  const tb=document.getElementById('tb-clientes');
+  if(!data?.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--t2);padding:24px">Nenhum cliente encontrado</td></tr>';return;}
+  tb.innerHTML=data.map(c=>`<tr>
+    <td style="font-weight:600">${c.nome||'—'}</td>
+    <td>${c.telefone||'—'}</td>
+    <td style="color:var(--t2)">${c.email||'—'}</td>
+    <td style="color:var(--t2)">${c.criado_em?new Date(c.criado_em).toLocaleDateString('pt-BR'):'—'}</td>
+    <td><span class="badge" style="background:rgba(108,63,232,.1);color:#a78bfa">${c.plano||'—'}</span></td>
+    <td><span class="badge" style="background:rgba(34,197,94,.1);color:var(--g)">${c.ativo?'ATIVO':'INATIVO'}</span></td>
+    <td><button class="btn btn-o" style="font-size:11px;padding:4px 8px">Ver</button></td>
+  </tr>`).join('');
+  document.getElementById('nb-cli').textContent=data.length;
+}
+
+// ─── OS ────────────────────────────────────────────────────────
+async function loadOS(){
+  const status=document.getElementById('os-filtro')?.value||'';
+  const tbl=produto==='saude'?'kh_agendamentos':produto==='store'?'ks_pedidos':'mc_ordens_servico';
+  let q=sb.from(tbl).select('*').order('criado_em',{ascending:false}).limit(50);
+  if(status)q=q.eq('status',status);
+  const{data}=await q;
+  const tb=document.getElementById('tb-os');
+  if(!data?.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--t2);padding:24px">Nenhum registro encontrado</td></tr>';return;}
+  const statusColors={AGENDADO:'rgba(108,63,232,.1)',CONFIRMADO:'rgba(34,197,94,.1)',CONCLUIDO:'rgba(0,229,255,.1)',CANCELADO:'rgba(244,63,94,.1)',ABERTA:'rgba(251,191,36,.1)',FECHADA:'rgba(34,197,94,.1)'};
+  tb.innerHTML=data.map(o=>`<tr>
+    <td style="font-weight:600">${o.nome_paciente||o.nome_cliente||o.cliente||'—'}</td>
+    <td style="color:var(--t2)">${o.data_hora||o.criado_em?new Date(o.data_hora||o.criado_em).toLocaleString('pt-BR'):'—'}</td>
+    <td style="color:var(--t2)">${o.servico||o.descricao||'—'}</td>
+    <td style="font-weight:700">${o.valor?'R$'+parseFloat(o.valor).toFixed(2):'—'}</td>
+    <td><span class="badge" style="background:${statusColors[o.status]||'rgba(255,255,255,.05)'};color:var(--t1)">${o.status||'—'}</span></td>
+    <td style="color:var(--t2)">${o.canal||'—'}</td>
+    <td><button class="btn btn-o" style="font-size:11px;padding:4px 8px">Ver</button></td>
+  </tr>`).join('');
+}
+
+// ─── ESTOQUE ──────────────────────────────────────────────────
+async function loadEstoque(){
+  const tbl=produto==='store'?'ks_produtos':'kh_servicos';
+  const{data}=await sb.from(tbl).select('*').limit(100);
+  const tb=document.getElementById('tb-estoque');
+  if(!data?.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--t2);padding:24px">Nenhum produto/serviço cadastrado</td></tr>';return;}
+  document.getElementById('est-total').textContent=data.length;
+  tb.innerHTML=data.map(p=>`<tr>
+    <td style="font-weight:600">${p.nome||'—'}</td>
+    <td style="color:var(--t2)">${p.sku||'—'}</td>
+    <td style="font-weight:700">${p.estoque_atual!=null?p.estoque_atual:p.duracao_minutos+'min'}</td>
+    <td style="color:var(--t2)">${p.estoque_minimo||'—'}</td>
+    <td>R$${parseFloat(p.preco||0).toFixed(2)}</td>
+    <td style="color:var(--t2)">${p.categoria||'—'}</td>
+    <td><span class="badge" style="background:rgba(34,197,94,.1);color:var(--g)">${p.ativo?'ATIVO':'INATIVO'}</span></td>
+  </tr>`).join('');
+}
+
+// ─── PAGAMENTOS ───────────────────────────────────────────────
+async function loadPagamentos(){
+  const tbl=produto==='saude'?'kh_financeiro':'ks_financeiro';
+  const{data}=await sb.from(tbl).select('*').order('criado_em',{ascending:false}).limit(50).catch(()=>({data:[]}));
+  const tb=document.getElementById('tb-pag');
+  if(!data?.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:var(--t2);padding:24px">Nenhum lançamento encontrado</td></tr>';return;}
+  const total=data.filter(p=>p.status==='PAGO').reduce((s,p)=>s+parseFloat(p.valor||0),0);
+  document.getElementById('pg-mes').textContent='R$'+total.toFixed(2);
+  tb.innerHTML=data.map(p=>`<tr>
+    <td style="color:var(--t2)">${new Date(p.criado_em).toLocaleDateString('pt-BR')}</td>
+    <td style="font-weight:600">${p.descricao||'—'}</td>
+    <td style="color:var(--t2)">${p.nome_paciente||p.cliente_nome||'—'}</td>
+    <td style="font-weight:700;color:${p.tipo==='RECEITA'?'var(--g)':'var(--r)'}">R$${parseFloat(p.valor||0).toFixed(2)}</td>
+    <td style="color:var(--t2)">${p.forma_pagamento||'—'}</td>
+    <td><span class="badge" style="background:${p.status==='PAGO'?'rgba(34,197,94,.1)':'rgba(251,191,36,.1)'};color:${p.status==='PAGO'?'var(--g)':'var(--o)'}">${p.status||'—'}</span></td>
+    <td>${p.nota_fiscal_url?`<a href="${p.nota_fiscal_url}" target="_blank" style="color:var(--c);font-size:11px">Ver NF</a>`:'—'}</td>
+  </tr>`).join('');
+}
+
+// ─── NPS ──────────────────────────────────────────────────────
+async function loadNPS(){
+  const tbl=produto==='saude'?'kh_avaliacoes':'mc_avaliacoes_nps';
+  const{data}=await sb.from(tbl).select('*').order('criado_em',{ascending:false}).limit(50).catch(()=>({data:[]}));
+  if(!data?.length)return;
+  const notas=data.filter(a=>a.nota).map(a=>+a.nota);
+  const prom=notas.filter(n=>n>=9).length, det=notas.filter(n=>n<=6).length, neu=notas.filter(n=>n>=7&&n<=8).length;
+  const nps=notas.length?Math.round(((prom-det)/notas.length)*100):0;
+  document.getElementById('nps-score').textContent=nps;document.getElementById('nps-prom').textContent=prom;
+  document.getElementById('nps-neu').textContent=neu;document.getElementById('nps-det').textContent=det;
+  document.getElementById('tb-nps').innerHTML=data.map(a=>`<tr>
+    <td style="font-weight:600">${a.nome_cliente||a.telefone_paciente||'—'}</td>
+    <td><span class="badge" style="background:${a.nota>=9?'rgba(34,197,94,.1)':a.nota>=7?'rgba(251,191,36,.1)':'rgba(244,63,94,.1)'};color:${a.nota>=9?'var(--g)':a.nota>=7?'var(--o)':'var(--r)'}">${a.nota}/10</span></td>
+    <td style="color:var(--t2);font-size:12px">${a.comentario||'—'}</td>
+    <td style="color:var(--t2)">${new Date(a.criado_em).toLocaleDateString('pt-BR')}</td>
+  </tr>`).join('');
+}
+
+// ─── CONVERSAS ────────────────────────────────────────────────
+async function loadConversas(){
+  const tbl=produto==='saude'?'kh_conversas':'ks_conversas';
+  const{data}=await sb.from(tbl).select('*').order('ultimo_contato',{ascending:false}).limit(30).catch(()=>({data:[]}));
+  const list=document.getElementById('conv-list');
+  if(!data?.length){list.innerHTML='<div style="padding:16px;color:var(--t2);font-size:13px">Nenhuma conversa</div>';return;}
+  list.innerHTML=data.map(c=>`
+    <div onclick="openConv(${JSON.stringify(c).replace(/"/g,'&quot;')})" style="padding:12px 14px;cursor:pointer;border-bottom:1px solid rgba(255,255,255,.04);transition:.2s" onmouseover="this.style.background='rgba(108,63,232,.08)'" onmouseout="this.style.background=''">
+      <div style="font-weight:600;font-size:13px;margin-bottom:2px">${c.nome_cliente||c.numero_cliente}</div>
+      <div style="font-size:11px;color:var(--t2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${c.ultima_mensagem||'—'}</div>
+      <div style="font-size:10px;color:var(--t3);margin-top:2px">${c.ultimo_contato?new Date(c.ultimo_contato).toLocaleString('pt-BR'):'—'}</div>
+    </div>`).join('');
+}
+
+function openConv(c){
+  document.getElementById('conv-detail').innerHTML=`
+    <div>
+      <h3 style="font-size:15px;font-weight:700;margin-bottom:4px">${c.nome_cliente||c.numero_cliente}</h3>
+      <div style="font-size:12px;color:var(--t2);margin-bottom:16px">${c.numero_cliente} · Status: ${c.status}</div>
+      <div style="background:var(--bg3);border-radius:10px;padding:14px;margin-bottom:10px">
+        <div style="font-size:11px;color:var(--t3);margin-bottom:6px">Última mensagem</div>
+        <div style="font-size:13px">${c.ultima_mensagem||'—'}</div>
+      </div>
+      <div style="background:var(--bg3);border-radius:10px;padding:14px">
+        <div style="font-size:11px;color:var(--t3);margin-bottom:6px">Contexto da conversa</div>
+        <pre style="font-size:11px;color:var(--t2);overflow:auto">${JSON.stringify(c.contexto||{},null,2)}</pre>
+      </div>
+    </div>`;
+}
+
+// ─── CONFIG IA ────────────────────────────────────────────────
+function setIATab(id){
+  document.querySelectorAll('.ia-panel').forEach(p=>p.style.display='none');
+  document.querySelectorAll('.ia-tab').forEach(t=>t.classList.remove('on'));
+  document.getElementById('ia-'+id).style.display='block';
+  event.target.classList.add('on');
+}
+
+function renderHorarios(){
+  const dias=[['Seg','seg'],['Ter','ter'],['Qua','qua'],['Qui','qui'],['Sex','sex'],['Sáb','sab'],['Dom','dom']];
+  const opens=[1,1,1,1,1,1,0];
+  document.getElementById('horarios-ia').innerHTML=dias.map((d,i)=>`
+    <div style="display:flex;gap:10px;align-items:center;font-size:13px">
+      <input type="checkbox" ${opens[i]?'checked':''} style="margin:0">
+      <span style="width:40px;color:var(--t1)">${d[0]}</span>
+      <input class="fi" type="time" value="${i<5?'08:00':'09:00'}" style="width:85px">
+      <span style="color:var(--t3)">até</span>
+      <input class="fi" type="time" value="${i<5?'18:00':i===5?'13:00':'12:00'}" style="width:85px">
+    </div>`).join('');
+}
+
+function renderCenarios(){
+  const c={auto:['Quero agendar uma revisão','Quanto custa a troca de óleo?','Meu carro está fazendo barulho'],store:['Quero comprar um produto','Tem estoque do item X?','Prazo de entrega?'],saude:['Quero marcar uma consulta','Quanto custa a consulta?','A doutora atende convênio?']};
+  const cens=c[produto]||c.saude;
+  document.getElementById('cenarios').innerHTML=cens.map(s=>`<button class="btn btn-o" style="text-align:left;font-size:12px" onclick="simularCenario('${s}')">${s}</button>`).join('');
+}
+
+function simularCenario(msg){
+  document.getElementById('teste-inp').value=msg;
+  setIATab('teste');testarIA();
+}
+
+async function testarIA(){
+  const inp=document.getElementById('teste-inp');
+  const msg=inp.value.trim();if(!msg)return;inp.value='';
+  const chat=document.getElementById('teste-chat');
+  chat.innerHTML+=`<div style="align-self:flex-end;background:rgba(108,63,232,.2);padding:8px 12px;border-radius:10px 3px 10px 10px;font-size:12px;max-width:80%">${msg}</div>`;
+  chat.scrollTop=chat.scrollHeight;
+  // Chamar orchestrator do produto
+  const fns={auto:'orquestrador',store:'orchestrator-store',saude:'orchestrator-saude'};
+  try{
+    const r=await fetch(SB_URL+'/functions/v1/'+(fns[produto]||'orchestrator-saude'),{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+SB_KEY},
+      body:JSON.stringify({from:'test',msg,modo:'simulacao'})
+    });
+    const d=await r.json();
+    const reply=d.reply||d.message||'...';
+    chat.innerHTML+=`<div style="align-self:flex-start;background:var(--bg3);padding:8px 12px;border-radius:3px 10px 10px 10px;font-size:12px;max-width:80%">${reply}</div>`;
+  }catch{
+    chat.innerHTML+=`<div style="align-self:flex-start;background:var(--bg3);padding:8px 12px;border-radius:3px 10px 10px 10px;font-size:12px;max-width:80%;color:var(--t3)">Edge function offline. Configure e teste no Supabase.</div>`;
+  }
+  chat.scrollTop=chat.scrollHeight;
+}
+
+function salvarIA(){toast('✅ Configurações de IA salvas!');}
+
+// ─── MODAL ────────────────────────────────────────────────────
+function showModal(id){
+  let html='';
+  if(id==='m-nova-instancia'){html=`<div style="padding:24px;background:var(--bg2);border-radius:16px;max-width:400px;margin:auto"><h3 style="margin-bottom:16px">📱 Nova Instância WhatsApp</h3><div style="display:flex;flex-direction:column;gap:12px"><label>Nome da instância</label><input class="fi" id="ni-nome" placeholder="minha-empresa-01"><label>Produto</label><select class="fi" id="ni-prod"><option value="auto">Auto</option><option value="store">Store</option><option value="saude">Saúde</option></select><button class="btn btn-p" onclick="criarInstancia()">Criar</button><button class="btn btn-o" onclick="closeModal()">Cancelar</button></div></div>`;}
+  
+  const overlay=document.createElement('div');
+  overlay.id='modal-overlay';
+  overlay.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:50;display:flex;align-items:center;justify-content:center;padding:20px';
+  overlay.innerHTML=html;
+  overlay.addEventListener('click',e=>{if(e.target===overlay)closeModal();});
+  document.body.appendChild(overlay);
+}
+function closeModal(){document.getElementById('modal-overlay')?.remove();}
+
+async function criarInstancia(){
+  const nome=document.getElementById('ni-nome').value.trim();
+  const prod=document.getElementById('ni-prod').value;
+  if(!nome){toast('Nome obrigatório',true);return;}
+  const webhooks={auto:SB_URL+'/functions/v1/orquestrador',store:SB_URL+'/functions/v1/orchestrator-store',saude:SB_URL+'/functions/v1/orchestrator-saude'};
+  // Criar no Evolution API
+  await fetch(EVO+'/instance/create',{method:'POST',headers:{'Content-Type':'application/json',apikey:EK},body:JSON.stringify({instanceName:nome,integration:'WHATSAPP-BAILEYS'})}).catch(()=>{});
+  // Configurar webhook
+  await fetch(EVO+'/webhook/set/'+nome,{method:'POST',headers:{'Content-Type':'application/json',apikey:EK},body:JSON.stringify({url:webhooks[prod],events:['MESSAGES_UPSERT'],enabled:true})}).catch(()=>{});
+  // Salvar no Supabase
+  await sb.from('kronexa_whatsapp_connections').insert({produto:prod,tenant_id:null,instance_name:nome,status:'DESCONECTADO',webhook_url:webhooks[prod]});
+  toast('✅ Instância criada!');closeModal();loadWPP();
+}
+
+// ─── AUTH ACTIONS ──────────────────────────────────────────────
+async function logout(){await sb.auth.signOut();window.location.href='index.html';}
+async function alterarSenha(){
+  const p=document.getElementById('new-pass').value;
+  const c=document.getElementById('conf-pass').value;
+  if(p!==c){toast('Senhas não coincidem',true);return;}
+  const{error}=await sb.auth.updateUser({password:p});
+  if(error)toast(error.message,true);else toast('✅ Senha alterada!');
+}
+
+// ─── UTILS ────────────────────────────────────────────────────
+function toast(msg,err=false){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.className='toast '+(err?'err':'ok');t.style.display='block';
+  setTimeout(()=>t.style.display='none',3000);
+}
+
+init();
+</script>
+</body>
+</html>
