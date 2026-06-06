@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nova senha — Kronexa Platform</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{--p:#6C3FE8;--bg:#08081A;--bg2:#12122A;--t1:#F0F0FF;--t2:#9090b0;--t3:#505070}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--t1);font-family:-apple-system,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+.box{background:var(--bg2);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:40px;width:100%;max-width:400px}
+.logo{text-align:center;font-size:22px;font-weight:900;margin-bottom:24px}.logo span{color:var(--p)}
+h2{font-size:18px;font-weight:800;margin-bottom:6px}
+p{font-size:13px;color:var(--t2);margin-bottom:20px}
+label{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;display:block;margin-bottom:4px}
+.fi{width:100%;padding:11px 14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:var(--t1);font-size:14px;outline:none;margin-bottom:14px}
+.fi:focus{border-color:var(--p)}
+.btn{width:100%;padding:13px;background:var(--p);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer}
+.ok{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);border-radius:8px;padding:10px 14px;font-size:13px;color:#22c55e;display:none;margin-bottom:14px}
+</style></head>
+<body>
+<div class="box">
+  <div class="logo">KRO<span>NEXA</span></div>
+  <h2>Criar nova senha</h2>
+  <p>Digite sua nova senha abaixo.</p>
+  <div id="ok" class="ok">✅ Senha alterada! Redirecionando...</div>
+  <div>
+    <label>Nova senha</label>
+    <input class="fi" type="password" id="p1" placeholder="Mínimo 6 caracteres">
+    <label>Confirmar senha</label>
+    <input class="fi" type="password" id="p2" placeholder="Repita a senha">
+  </div>
+  <button class="btn" onclick="save()">Salvar nova senha</button>
+</div>
+<script>
+const sb=supabase.createClient('https://tcjynyfusqkqtdohnyzq.supabase.co','sb_publishable_gNJhc4WCS9MnnmDAL2T6Vg_AQ71_Vid');
+async function save(){
+  const p1=document.getElementById('p1').value, p2=document.getElementById('p2').value;
+  if(p1!==p2){alert('Senhas não coincidem');return;}
+  if(p1.length<6){alert('Mínimo 6 caracteres');return;}
+  const{error}=await sb.auth.updateUser({password:p1});
+  if(error){alert(error.message);return;}
+  const ok=document.getElementById('ok');ok.style.display='block';
+  setTimeout(()=>window.location.href='dashboard.html',2000);
+}
+</script>
+</body></html>
