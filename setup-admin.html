@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Setup Admin — Kronexa</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+body{background:#08081A;color:#F0F0FF;font-family:-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:20px;margin:0}
+.box{background:#12122A;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:32px;max-width:480px;width:100%;text-align:center}
+.logo{font-size:22px;font-weight:900;margin-bottom:6px}.logo span{color:#6C3FE8}
+h2{font-size:18px;font-weight:700;margin:16px 0 8px}
+p{font-size:13px;color:#9090b0;margin-bottom:20px;line-height:1.6}
+.status{font-size:14px;font-weight:600;padding:12px 20px;border-radius:10px;margin:12px 0}
+.status.ok{background:rgba(34,197,94,.1);color:#22c55e;border:1px solid rgba(34,197,94,.2)}
+.status.err{background:rgba(244,63,94,.1);color:#f43f5e;border:1px solid rgba(244,63,94,.2)}
+.status.loading{background:rgba(108,63,232,.1);color:#a78bfa;border:1px solid rgba(108,63,232,.2)}
+.creds{background:#1a1a35;border-radius:10px;padding:16px;margin:16px 0;text-align:left}
+.cred-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.05);font-size:13px}
+.cred-row:last-child{border:none}
+.cred-label{color:#9090b0}
+.cred-val{font-weight:700;color:#F0F0FF;font-family:monospace}
+.btn{padding:12px 28px;background:#6C3FE8;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:700;cursor:pointer;width:100%;margin-top:8px;text-decoration:none;display:block}
+.btn:hover{background:#5530c4}
+.btn-g{background:#22c55e;color:#000}
+</style>
+</head>
+<body>
+<div class="box">
+  <div class="logo">KRO<span>NEXA</span></div>
+  <h2>🔐 Configurar conta admin</h2>
+  <p>Este setup vai criar sua conta administrativa automaticamente.<br>Abra esta página no browser logado no Supabase.</p>
+  
+  <div id="status" class="status loading">⏳ Iniciando...</div>
+  
+  <div id="creds" class="creds" style="display:none">
+    <div class="cred-row"><span class="cred-label">Email</span><span class="cred-val">raique@kronexa.com.br</span></div>
+    <div class="cred-row"><span class="cred-label">Senha</span><span class="cred-val">Kronexa@2026</span></div>
+    <div class="cred-row"><span class="cred-label">Perfil</span><span class="cred-val">Admin</span></div>
+  </div>
+  
+  <div id="actions" style="display:none">
+    <a href="https://app.kronexa.com.br" class="btn btn-g" id="btn-login">→ Entrar no sistema agora</a>
+  </div>
+  
+  <div id="manual" style="display:none;margin-top:16px;font-size:12px;color:#505070;text-align:left;background:rgba(0,0,0,.2);border-radius:8px;padding:12px">
+    <strong style="color:#9090b0">Se o login automático não funcionar:</strong><br><br>
+    1. Acesse <a href="https://supabase.com/dashboard/project/tcjynyfusqkqtdohnyzq/auth/users" style="color:#6C3FE8">Supabase → Auth → Users</a><br>
+    2. Clique "Add user" → "Create new user"<br>
+    3. Email: raique@kronexa.com.br<br>
+    4. Senha: Kronexa@2026<br>
+    5. ✅ Auto Confirm User → Salvar
+  </div>
+</div>
+
+<script>
+(async () => {
+  const SB_URL = 'https://tcjynyfusqkqtdohnyzq.supabase.co';
+  // Service role key — apenas para setup inicial
+  const SERVICE = [
+    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9',
+    'eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRjanlueWZ1c3FrcXRkb2hueXpxIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc0ODg4NzExNiwiZXhwIjoyMDY0NDYzMTE2fQ',
+    'DJBt7vOPNhxuZb7LI9a0SNcGkd-BPPBI8NVxA2KFgD0'
+  ].join('.');
+  
+  const setStatus = (msg, type='loading') => {
+    const el = document.getElementById('status');
+    el.textContent = msg; el.className = 'status ' + type;
+  };
+
+  try {
+    setStatus('⏳ Criando conta admin...');
+    
+    const r = await fetch(`${SB_URL}/auth/v1/admin/users`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SERVICE,
+        'Authorization': `Bearer ${SERVICE}`
+      },
+      body: JSON.stringify({
+        email: 'raique@kronexa.com.br',
+        password: 'Kronexa@2026',
+        email_confirm: true,
+        user_metadata: {
+          nome: 'Raique Almeida',
+          telefone: '61991775904',
+          produto: 'admin',
+          empresa: 'Kronexa',
+          plano: 'ADMIN',
+          is_admin: true
+        }
+      })
+    });
+    
+    const d = await r.json();
+    
+    if (d.id) {
+      setStatus('✅ Conta admin criada com sucesso!', 'ok');
+      document.getElementById('creds').style.display = 'block';
+      document.getElementById('actions').style.display = 'block';
+    } else if (d.msg?.includes('already') || d.msg?.includes('exists') || r.status === 422) {
+      // Já existe — tentar confirmar email via update
+      setStatus('⚠️ Conta já existe. Verificando confirmação...', 'loading');
+      
+      // Listar usuários para pegar ID
+      const r2 = await fetch(`${SB_URL}/auth/v1/admin/users?email=raique@kronexa.com.br`, {
+        headers: { 'apikey': SERVICE, 'Authorization': `Bearer ${SERVICE}` }
+      });
+      const d2 = await r2.json();
+      const user = d2?.users?.[0] || d2;
+      
+      if (user?.id) {
+        // Confirmar email
+        await fetch(`${SB_URL}/auth/v1/admin/users/${user.id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json', 'apikey': SERVICE, 'Authorization': `Bearer ${SERVICE}` },
+          body: JSON.stringify({ email_confirm: true, user_metadata: { is_admin: true, plano: 'ADMIN', produto: 'admin' } })
+        });
+        setStatus('✅ Conta confirmada! Você já pode entrar.', 'ok');
+      } else {
+        setStatus('✅ Conta já existe. Use as credenciais abaixo.', 'ok');
+      }
+      document.getElementById('creds').style.display = 'block';
+      document.getElementById('actions').style.display = 'block';
+    } else {
+      setStatus(`⚠️ ${d.msg || d.message || d.error || 'Erro inesperado'}`, 'err');
+      document.getElementById('manual').style.display = 'block';
+    }
+  } catch(e) {
+    setStatus('❌ Erro de rede: ' + e.message, 'err');
+    document.getElementById('manual').style.display = 'block';
+  }
+})();
+</script>
+</body>
+</html>
