@@ -5,70 +5,77 @@
 <title>Kronexa Platform — Login</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-:root{--p:#6C3FE8;--c:#00E5FF;--g:#22c55e;--r:#f43f5e;--bg:#08081A;--bg2:#12122A;--t1:#F0F0FF;--t2:#9090b0;--t3:#505070}
+:root{--p:#6C3FE8;--g:#22c55e;--r:#f43f5e;--bg:#08081A;--bg2:#12122A;--bg3:#1a1a35;--t1:#F0F0FF;--t2:#9090b0;--t3:#505070}
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:var(--bg);color:var(--t1);font-family:-apple-system,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
-body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle at 30% 50%,rgba(108,63,232,.12),transparent 60%),radial-gradient(circle at 70% 50%,rgba(0,229,255,.06),transparent 60%);pointer-events:none}
-.box{background:var(--bg2);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:40px;width:100%;max-width:420px;position:relative}
-.logo{text-align:center;font-size:24px;font-weight:900;letter-spacing:-1px;margin-bottom:6px}
-.logo span{color:var(--p)}
-.tagline{text-align:center;font-size:12px;color:var(--t3);margin-bottom:28px}
-.tabs{display:flex;background:rgba(255,255,255,.04);border-radius:10px;padding:4px;margin-bottom:24px}
-.tab{flex:1;padding:8px;text-align:center;font-size:13px;font-weight:600;border-radius:8px;cursor:pointer;transition:.2s;color:var(--t2)}
-.tab.on{background:var(--p);color:#fff}
-.form{display:flex;flex-direction:column;gap:14px}
+body{background:var(--bg);color:var(--t1);font-family:-apple-system,BlinkMacSystemFont,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+body::before{content:'';position:fixed;inset:0;background:radial-gradient(circle at 30% 50%,rgba(108,63,232,.1),transparent 60%),radial-gradient(circle at 70% 50%,rgba(0,229,255,.05),transparent 60%);pointer-events:none}
+.box{background:var(--bg2);border:1px solid rgba(255,255,255,.08);border-radius:20px;padding:40px;width:100%;max-width:400px;position:relative;z-index:1}
+.logo{text-align:center;margin-bottom:6px}
+.logo-text{font-size:24px;font-weight:900;letter-spacing:-1px}.logo-text span{color:var(--p)}
+.logo-sub{text-align:center;font-size:12px;color:var(--t3);margin-bottom:28px}
+.tabs{display:flex;background:rgba(255,255,255,.04);border-radius:10px;padding:4px;margin-bottom:24px;gap:4px}
+.tab{flex:1;padding:9px;text-align:center;font-size:13px;font-weight:600;border-radius:8px;cursor:pointer;transition:.2s;color:var(--t2)}
+.tab.on{background:var(--p);color:#fff;box-shadow:0 2px 8px rgba(108,63,232,.4)}
 label{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:4px}
-.fi{width:100%;padding:11px 14px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.1);border-radius:10px;color:var(--t1);font-size:14px;outline:none;transition:.2s}
-.fi:focus{border-color:var(--p);background:rgba(108,63,232,.05)}
+.fi{width:100%;padding:11px 14px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.09);border-radius:10px;color:var(--t1);font-size:14px;outline:none;transition:.2s;margin-bottom:14px}
+.fi:focus{border-color:var(--p);background:rgba(108,63,232,.04)}
 .btn{padding:13px;background:linear-gradient(135deg,var(--p),#5530c4);color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:800;cursor:pointer;width:100%;transition:.2s}
 .btn:hover{transform:translateY(-1px);box-shadow:0 8px 24px rgba(108,63,232,.4)}
-.btn:disabled{opacity:.5;transform:none}
-.err{background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.2);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--r);display:none}
-.ok{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);border-radius:8px;padding:10px 14px;font-size:13px;color:var(--g);display:none}
-.divider{display:flex;align-items:center;gap:10px;margin:4px 0}
-.divider::before,.divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.06)}
-.divider span{font-size:11px;color:var(--t3)}
-.plano-select{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}
-.plano-opt{border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:8px;text-align:center;cursor:pointer;transition:.2s;font-size:11px}
-.plano-opt:hover,.plano-opt.on{border-color:var(--p);background:rgba(108,63,232,.1)}
-.plano-opt .nome{font-weight:700;margin-bottom:2px}
-.plano-opt .preco{font-size:10px;color:var(--t3)}
-.produtos{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-top:4px}
+.btn:disabled{opacity:.5;transform:none;cursor:not-allowed}
+.alert{border-radius:8px;padding:10px 14px;font-size:13px;margin-bottom:14px;display:none}
+.alert-err{background:rgba(244,63,94,.1);border:1px solid rgba(244,63,94,.2);color:var(--r)}
+.alert-ok{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.2);color:var(--g)}
+.form-section{display:none}
+.form-section.on{display:block}
+.divider{height:1px;background:rgba(255,255,255,.06);margin:16px 0}
+.small-link{font-size:12px;color:var(--t3);text-align:center;display:block;cursor:pointer;transition:.2s}
+.small-link:hover{color:var(--t2)}
+.products{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:14px}
 .prod-opt{border:1px solid rgba(255,255,255,.08);border-radius:8px;padding:8px;text-align:center;cursor:pointer;transition:.2s}
-.prod-opt:hover,.prod-opt.on{border-color:var(--c);background:rgba(0,229,255,.05)}
-.prod-opt .ico{font-size:20px;margin-bottom:3px}
+.prod-opt:hover,.prod-opt.on{border-color:var(--p);background:rgba(108,63,232,.08)}
+.prod-opt .ico{font-size:18px;margin-bottom:3px}
 .prod-opt .nm{font-size:10px;font-weight:700}
+.loading-overlay{position:fixed;inset:0;background:rgba(8,8,26,.8);display:flex;align-items:center;justify-content:center;z-index:100;display:none}
+.spinner{width:40px;height:40px;border:3px solid rgba(108,63,232,.3);border-top-color:var(--p);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
+
+<div id="loading-overlay" class="loading-overlay" style="display:none">
+  <div class="spinner"></div>
+</div>
+
 <div class="box">
-  <div class="logo">KRO<span>NEXA</span></div>
-  <div class="tagline">Plataforma unificada de gestão com IA</div>
-  
-  <div class="tabs">
+  <div class="logo"><div class="logo-text">KRO<span>NEXA</span></div></div>
+  <div class="logo-sub">Plataforma unificada de gestão com IA</div>
+
+  <div class="tabs" id="tabs">
     <div class="tab on" onclick="setTab('login')">Entrar</div>
     <div class="tab" onclick="setTab('register')">Criar conta</div>
   </div>
 
   <!-- LOGIN -->
-  <div id="t-login" class="form">
+  <div id="s-login" class="form-section on">
+    <div id="err-login" class="alert alert-err"></div>
     <div>
       <label>Email</label>
       <input class="fi" type="email" id="l-email" placeholder="seu@email.com" autocomplete="email">
     </div>
     <div>
       <label>Senha</label>
-      <input class="fi" type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()">
+      <input class="fi" type="password" id="l-pass" placeholder="••••••••" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter')login()">
     </div>
-    <div id="l-err" class="err"></div>
     <button class="btn" id="l-btn" onclick="login()">Entrar na plataforma →</button>
-    <div style="text-align:center">
-      <a href="#" onclick="showReset()" style="font-size:12px;color:var(--t3)">Esqueci minha senha</a>
-    </div>
+    <div class="divider"></div>
+    <a class="small-link" onclick="setTab('reset')">Esqueci minha senha</a>
   </div>
 
   <!-- REGISTRO -->
-  <div id="t-register" class="form" style="display:none">
+  <div id="s-register" class="form-section">
+    <div id="err-reg" class="alert alert-err"></div>
+    <div id="ok-reg" class="alert alert-ok"></div>
     <div>
       <label>Nome completo</label>
       <input class="fi" id="r-nome" placeholder="João da Silva">
@@ -78,7 +85,7 @@ label{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;le
       <input class="fi" type="email" id="r-email" placeholder="seu@email.com">
     </div>
     <div>
-      <label>Telefone (WhatsApp)</label>
+      <label>Telefone</label>
       <input class="fi" id="r-tel" placeholder="61999999999">
     </div>
     <div>
@@ -87,7 +94,7 @@ label{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;le
     </div>
     <div>
       <label>Produto</label>
-      <div class="produtos">
+      <div class="products">
         <div class="prod-opt on" data-p="auto" onclick="selProd(this)"><div class="ico">🔧</div><div class="nm">Auto</div></div>
         <div class="prod-opt" data-p="store" onclick="selProd(this)"><div class="ico">🛍️</div><div class="nm">Store</div></div>
         <div class="prod-opt" data-p="saude" onclick="selProd(this)"><div class="ico">🏥</div><div class="nm">Saúde</div></div>
@@ -95,91 +102,122 @@ label{font-size:11px;font-weight:700;color:var(--t3);text-transform:uppercase;le
     </div>
     <div>
       <label>Nome da empresa / clínica</label>
-      <input class="fi" id="r-empresa" placeholder="Ex: Oficina Exemplo, Clínica ABC">
+      <input class="fi" id="r-empresa" placeholder="Ex: Clínica ABC, Oficina XYZ">
     </div>
-    <div id="r-err" class="err"></div>
-    <div id="r-ok" class="ok"></div>
     <button class="btn" id="r-btn" onclick="register()">Criar conta grátis →</button>
-    <p style="font-size:11px;color:var(--t3);text-align:center">7 dias grátis · Sem cartão necessário</p>
+    <p style="font-size:11px;color:var(--t3);text-align:center;margin-top:10px">7 dias grátis · Sem cartão necessário</p>
   </div>
 
-  <!-- RESET -->
-  <div id="t-reset" class="form" style="display:none">
+  <!-- RESET SENHA -->
+  <div id="s-reset" class="form-section">
+    <div id="ok-reset" class="alert alert-ok"></div>
+    <p style="font-size:13px;color:var(--t2);margin-bottom:14px">Informe seu email para receber o link de redefinição.</p>
     <div>
-      <label>Email para recuperação</label>
+      <label>Email</label>
       <input class="fi" type="email" id="rs-email" placeholder="seu@email.com">
     </div>
-    <div id="rs-ok" class="ok"></div>
-    <button class="btn" onclick="sendReset()">Enviar link de redefinição</button>
-    <div style="text-align:center"><a href="#" onclick="setTab('login')" style="font-size:12px;color:var(--t3)">Voltar ao login</a></div>
+    <button class="btn" onclick="sendReset()">Enviar link →</button>
+    <div class="divider"></div>
+    <a class="small-link" onclick="setTab('login')">← Voltar ao login</a>
   </div>
 </div>
 
 <script>
-const SB_URL='https://tcjynyfusqkqtdohnyzq.supabase.co', SB_KEY='sb_publishable_gNJhc4WCS9MnnmDAL2T6Vg_AQ71_Vid';
-const sb=supabase.createClient(SB_URL,SB_KEY);
-let selProduto='auto';
+const SB_URL = 'https://tcjynyfusqkqtdohnyzq.supabase.co';
+const SB_KEY = 'sb_publishable_gNJhc4WCS9MnnmDAL2T6Vg_AQ71_Vid';
+const sb = supabase.createClient(SB_URL, SB_KEY);
+let selProduto = 'auto';
 
-// Verificar se já está logado
-sb.auth.getSession().then(({data:{session}})=>{
-  if(session)window.location.href='dashboard.html';
-});
+// Verificar sessão existente — redirecionar para dashboard
+(async () => {
+  const { data: { session } } = await sb.auth.getSession();
+  if (session) {
+    document.getElementById('loading-overlay').style.display = 'flex';
+    window.location.href = 'dashboard.html';
+  }
+})();
 
-function setTab(t){
-  ['login','register','reset'].forEach(id=>{
-    document.getElementById('t-'+id).style.display='none';
-    document.querySelectorAll('.tab').forEach((el,i)=>el.classList.toggle('on',i===['login','register'].indexOf(t)));
+function setTab(t) {
+  document.querySelectorAll('.form-section').forEach(s => s.classList.remove('on'));
+  document.getElementById('s-' + t).classList.add('on');
+  document.querySelectorAll('.tab').forEach((el, i) => {
+    el.classList.toggle('on', ['login','register'].indexOf(t) === i);
   });
-  document.getElementById('t-'+t).style.display='flex';
 }
 
-function selProd(el){
-  document.querySelectorAll('.prod-opt').forEach(e=>e.classList.remove('on'));
+function selProd(el) {
+  document.querySelectorAll('.prod-opt').forEach(e => e.classList.remove('on'));
   el.classList.add('on');
-  selProduto=el.dataset.p;
+  selProduto = el.dataset.p;
 }
 
-async function login(){
-  const email=document.getElementById('l-email').value.trim();
-  const pass=document.getElementById('l-pass').value;
-  const btn=document.getElementById('l-btn');
-  const err=document.getElementById('l-err');
-  if(!email||!pass){showErr(err,'Preencha email e senha');return;}
-  btn.disabled=true;btn.textContent='Entrando...';
-  const{error}=await sb.auth.signInWithPassword({email,password:pass});
-  if(error){showErr(err,error.message==='Invalid login credentials'?'Email ou senha incorretos':error.message);btn.disabled=false;btn.textContent='Entrar na plataforma →';return;}
-  window.location.href='dashboard.html';
+function showErr(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg; el.style.display = 'block';
+  setTimeout(() => el.style.display = 'none', 5000);
+}
+function showOk(id, msg) {
+  const el = document.getElementById(id);
+  el.textContent = msg; el.style.display = 'block';
 }
 
-async function register(){
-  const nome=document.getElementById('r-nome').value.trim();
-  const email=document.getElementById('r-email').value.trim();
-  const tel=document.getElementById('r-tel').value.trim();
-  const pass=document.getElementById('r-pass').value;
-  const empresa=document.getElementById('r-empresa').value.trim();
-  const btn=document.getElementById('r-btn');
-  const err=document.getElementById('r-err');
-  const ok=document.getElementById('r-ok');
-  if(!nome||!email||!pass||!empresa){showErr(err,'Preencha todos os campos');return;}
-  if(pass.length<6){showErr(err,'Senha mínima de 6 caracteres');return;}
-  btn.disabled=true;btn.textContent='Criando conta...';
-  const{data,error}=await sb.auth.signUp({email,password:pass,options:{data:{nome,telefone:tel,produto:selProduto,empresa,plano:'TRIAL'}}});
-  if(error){showErr(err,error.message);btn.disabled=false;btn.textContent='Criar conta grátis →';return;}
-  ok.textContent='✅ Conta criada! Verifique seu email para confirmar.';ok.style.display='block';
-  err.style.display='none';btn.disabled=false;
-  // Auto-login
-  setTimeout(()=>window.location.href='dashboard.html',1500);
+// Mapeamento produto → portal correto
+const portals = {
+  auto:  'https://mecaniia.com.br/portal-mecanico.html',
+  store: 'https://store.kronexa.com.br/portal-atendente.html',
+  saude: 'https://saude.kronexa.com.br/portal-recepcao.html',
+  admin: 'dashboard.html'
+};
+
+async function login() {
+  const email = document.getElementById('l-email').value.trim();
+  const pass = document.getElementById('l-pass').value;
+  const btn = document.getElementById('l-btn');
+  if (!email || !pass) { showErr('err-login', 'Preencha email e senha'); return; }
+  btn.disabled = true; btn.textContent = 'Entrando...';
+  const { data, error } = await sb.auth.signInWithPassword({ email, password: pass });
+  if (error) {
+    const msg = error.message.includes('Invalid') ? 'Email ou senha incorretos' : error.message;
+    showErr('err-login', msg);
+    btn.disabled = false; btn.textContent = 'Entrar na plataforma →';
+    return;
+  }
+  // Redirecionar para o portal correto
+  const meta = data.user?.user_metadata || {};
+  const produto = meta.produto || 'auto';
+  const destino = meta.is_admin ? 'dashboard.html' : (portals[produto] || 'dashboard.html');
+  document.getElementById('loading-overlay').style.display = 'flex';
+  btn.textContent = 'Redirecionando...';
+  setTimeout(() => window.location.href = destino, 800);
 }
 
-async function sendReset(){
-  const email=document.getElementById('rs-email').value;
-  const ok=document.getElementById('rs-ok');
-  await sb.auth.resetPasswordForEmail(email,{redirectTo:'https://app.kronexa.com.br/reset.html'});
-  ok.textContent='✅ Link enviado! Verifique seu email.';ok.style.display='block';
+async function register() {
+  const nome = document.getElementById('r-nome').value.trim();
+  const email = document.getElementById('r-email').value.trim();
+  const tel = document.getElementById('r-tel').value.trim();
+  const pass = document.getElementById('r-pass').value;
+  const empresa = document.getElementById('r-empresa').value.trim();
+  if (!nome || !email || !pass || !empresa) { showErr('err-reg', 'Preencha todos os campos'); return; }
+  if (pass.length < 6) { showErr('err-reg', 'Senha mínima: 6 caracteres'); return; }
+  const btn = document.getElementById('r-btn');
+  btn.disabled = true; btn.textContent = 'Criando...';
+  const { data, error } = await sb.auth.signUp({
+    email, password: pass,
+    options: { data: { nome, telefone: tel, produto: selProduto, empresa, plano: 'TRIAL' } }
+  });
+  if (error) { showErr('err-reg', error.message); btn.disabled = false; btn.textContent = 'Criar conta grátis →'; return; }
+  showOk('ok-reg', '✅ Conta criada! Redirecionando...');
+  document.getElementById('loading-overlay').style.display = 'flex';
+  const destino = portals[selProduto] || 'dashboard.html';
+  setTimeout(() => window.location.href = destino, 1500);
 }
 
-function showErr(el,msg){el.textContent=msg;el.style.display='block';}
-function showReset(){setTab('reset');document.querySelectorAll('.tab').forEach(t=>t.classList.remove('on'));}
+async function sendReset() {
+  const email = document.getElementById('rs-email').value.trim();
+  if (!email) return;
+  await sb.auth.resetPasswordForEmail(email, { redirectTo: 'https://app.kronexa.com.br/reset.html' });
+  showOk('ok-reset', '✅ Link enviado! Verifique seu email.');
+}
 </script>
 </body>
 </html>
